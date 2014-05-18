@@ -1,0 +1,224 @@
+REPORT OF ASSIGNMENT 1 - REPRODUCIBLE RESEARCH 
+==========================================================
+
+Loading and preprocessing the "Activity monitoring dataset"..
+
+```r
+r1 <- read.csv("C:\\Users\\Dinesh\\Downloads\\computing for data analysis\\activity.csv")
+r1[, "date"] <- as.Date(r1$date, "%Y-%m-%d")
+```
+
+The loaded data set looks something like
+
+```r
+head(r1)
+```
+
+```
+##   steps       date interval
+## 1    NA 2012-10-01        0
+## 2    NA 2012-10-01        5
+## 3    NA 2012-10-01       10
+## 4    NA 2012-10-01       15
+## 5    NA 2012-10-01       20
+## 6    NA 2012-10-01       25
+```
+
+
+### Q1:: What is mean total number of steps taken per day?
+
+1.Making a histogram of the total number of steps taken each day
+
+
+```r
+r2 <- split(r1, r1$date)
+r3 <- sapply(r2, function(x) sum(x[, "steps"]))
+r4 <- NULL
+for (i in 1:length(r3)) {
+    r4[i] <- r3[[i]][1]
+}
+r4 <- subset(r4, r4 != "NA")
+hist(r4, main = "histogram for total steps per day", xlab = "total steps per day", 
+    col = "red", breaks = 20)
+```
+
+![plot of chunk unnamed-chunk-3](figure/unnamed-chunk-3.png) 
+
+
+2.Calculating the mean and median total number of steps taken per day
+
+```r
+mean1 <- mean(r4, na.rm = T)
+median1 <- median(r4)
+```
+
+ 
+ The mean of the total number of steps taken per day is 1.0766 &times; 10<sup>4</sup>  
+ 
+ The median of the total number of steps taken per day is 10765
+ 
+### Q2:: What is the average daily activity pattern?
+
+ 1.Making a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all days (y-axis)
+
+
+```r
+r5 <- split(r1, r1$interval)
+r6 <- sapply(r5, function(x) mean(x[, "steps"], na.rm = T))
+x <- NULL
+y <- NULL
+for (i in 1:length(levels(factor(r1$interval)))) {
+    x <- c(x, r1[i, 3])
+    y <- c(y, r6[[i]][1])
+}
+plot(x, y, type = "l", main = "Avg steps for a particular time interval", xlab = "time of the day(HHMM)", 
+    ylab = "mean total steps in that interval ")
+```
+
+![plot of chunk unnamed-chunk-5](figure/unnamed-chunk-5.png) 
+
+```r
+best <- data.frame(x, y)
+best1 <- subset(best, best[, 2] == max(best[, 2]))[, 1]
+```
+
+
+The 5 minute interval with most average number of steps is 830 to 835
+
+### Imputing missing values
+1. Calculating the number of missing values in the Activity monitoring dataset
+
+
+```r
+r7 <- sum(is.na(r1$steps))
+```
+
+ Total NAs in the data set are 2304.
+ 
+2. Devising a strategy for filling in all of the missing values in the dataset. We can do this by filling in the NA values by average number of steps for that particular 5 minute interval across all the days.
+
+###Creating a new data set with filled in NA values.
+
+
+```r
+p1 <- r1
+q1 <- rep(y, length(levels(factor(p1$date))))
+for (i in 1:nrow(p1)) {
+    if (is.na(p1[i, 1]) == TRUE) {
+        p1[i, 1] <- q1[i]
+    } else {
+        next
+    }
+}
+```
+
+
+Now the new dataset with imputed NA values looks like 
+
+```r
+head(p1)
+```
+
+```
+##     steps       date interval
+## 1 1.71698 2012-10-01        0
+## 2 0.33962 2012-10-01        5
+## 3 0.13208 2012-10-01       10
+## 4 0.15094 2012-10-01       15
+## 5 0.07547 2012-10-01       20
+## 6 2.09434 2012-10-01       25
+```
+
+
+1.Making a histogram of the total number of steps taken each day
+
+
+```r
+p2 <- split(p1, p1$date)
+p3 <- sapply(p2, function(x) sum(x[, "steps"]))
+p4 <- NULL
+for (i in 1:length(p3)) {
+    p4[i] <- p3[[i]][1]
+}
+
+hist(p4, main = "histogram for total steps per day", xlab = "total steps per day", 
+    col = "red", breaks = 20)
+```
+
+![plot of chunk unnamed-chunk-9](figure/unnamed-chunk-9.png) 
+
+
+2.Calculating the mean and median total number of steps taken per day
+
+```r
+mean <- mean(p4)
+median <- median(p4)
+```
+
+ 
+ The mean of the total number of steps taken per day is 1.0766 &times; 10<sup>4</sup>  
+ 
+ The median of the total number of steps taken per day is 1.0766 &times; 10<sup>4</sup> 
+ 
+### From this we can conclude that there is no significant difference from the mean and median we achieved in the initial raw dataset.Although the values of mean and median converge to become equal.
+
+
+###Q3::Are there differences in activity patterns between weekdays and weekends?
+
+1.Creating a new factor variable in the dataset with two levels - "weekday" and "weekend" indicating whether a given date is from a weekday or weekend day.
+
+
+```r
+p1[, "date"] <- as.Date(r1$date, "%Y-%m-%d")
+kp <- weekdays(p1$date, abbreviate = F)
+kp1 <- NULL
+for (i in 1:nrow(p1)) {
+    if (kp[i] == "Saturday" | kp[i] == "Sunday") {
+        kp1[i] <- "Weekend"
+    } else {
+        kp1[i] <- "Weekday"
+    }
+}
+p1 <- cbind.data.frame(p1, kp1)
+kp2 <- subset(p1, p1[, 4] == "Weekday")
+kp3 <- subset(p1, p1[, 4] == "Weekend")
+kp21 <- split(kp2, kp2$interval)
+kp22 <- sapply(kp21, function(x) mean(x[, "steps"]))
+x1 <- NULL
+x2 <- NULL
+y1 <- NULL
+y2 <- NULL
+for (i in 1:length(levels(factor(kp2$interval)))) {
+    x1 <- c(x1, kp2[i, 3])
+    y1 <- c(y1, kp22[[i]][1])
+}
+kp31 <- split(kp3, kp3$interval)
+kp32 <- sapply(kp31, function(x) mean(x[, "steps"]))
+for (i in 1:length(levels(factor(kp3$interval)))) {
+    x2 <- c(x2, kp3[i, 3])
+    y2 <- c(y2, kp32[[i]][1])
+}
+par(mfrow = c(2, 1))
+plot(x1, y1, main = "Weekday", xlab = "interval", ylab = "steps", type = "l")
+plot(x2, y2, main = "Weekend", xlab = "interval", ylab = "steps", type = "l")
+```
+
+![plot of chunk unnamed-chunk-11](figure/unnamed-chunk-11.png) 
+
+
+Hence we can compare the required steps for weekday and weekend respectively from the above plots.
+
+
+
+
+
+
+
+
+
+ 
+
+
+ 
+ 
+ 
